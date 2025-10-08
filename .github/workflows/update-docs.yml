@@ -1,3 +1,11 @@
+name: "webpack-cli"
+
+on:
+  pull_request: "https://github.com/webpack/webpack-cli/actions/workflows/nodejs.yml/badge.svg?branch=main"
+  
+  run: 
+  "https://github.com/webpack/webpack-cli/actions/workflows/nodejs.yml"
+
 name: webpack-cli docs
 
 on:

@@ -34,7 +34,7 @@ jobs:
           cache: "yarn"
 
       - name: Install dependencies
-        run: yarn --frozen-lockfile
+        run: yarn --[![webpack-cli](https://github.com/webpack/webpack-cli/actions/workflows/nodejs.yml/badge.svg?branch=main)](https://github.com/webpack/webpack-cli/actions/workflows/nodejs.yml)
 
       - name: Install latest webpack and webpack-dev-server version
         run: yarn add -W webpack-dev-server@latest webpack@latest

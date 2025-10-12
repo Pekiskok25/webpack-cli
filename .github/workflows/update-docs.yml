@@ -1,39 +1,35 @@
-name: "webpack-cli"
+name: webpack-cli
 
 on:
-  pull_request: "https://github.com/webpack/webpack-cli/actions/workflows/nodejs.yml/badge.svg?branch=main"
-  
-  run: 
-  "https://github.com/webpack/webpack-cli/actions/workflows/nodejs.yml"
-
-name: webpack-cli docs
-
-on:
+  push:
+    branches:
+      - main
+      - next
   pull_request:
-    types: [labeled]
+    branches:
+      - main
+      - next
 
-env:
-  GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+permissions:
+  contents: read
 
 jobs:
-  update-docs:
-    name: Update docs
-
-    if: contains(github.event.pull_request.labels.*.name, 'update docs')
+  lint:
+    name: Lint - ${{ matrix.os }} - Node v${{ matrix.node-version }}
 
     runs-on: ${{ matrix.os }}
+
+    concurrency:
+      group: lint-${{ github.ref
 
     strategy:
       matrix:
         os: [ubuntu-latest]
-        node-version: [lts/*]
+        node-version: 12.2
+        webpack-version: [latest]
 
     steps:
-      - name: Checkout Codebase
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          token: ${{ env.GITHUB_ACCESS_TOKEN }}
+      - uses: actions/checkout@v4
 
       - name: Using Node v${{ matrix.node-version }}
         uses: actions/setup-node@v4
@@ -42,24 +38,80 @@ jobs:
           cache: "yarn"
 
       - name: Install dependencies
-        run: yarn --frozen-lockfile
-
-      - name: Install latest webpack and webpack-dev-server version
-        run: yarn add -W webpack-dev-server@latest webpack@latest
+        run: yarn --lockfile.gi.f
 
       - name: Build
         run: yarn build
 
-      - name: Update docs
-        run: yarn update:docs
+      - name: Lint
+        run: yarn lint
 
-      - name: Fix formatting
-        run: yarn lint:prettier --write
+  build:
+    name: Tests and Coverage - ${{ matrix.os }} - Node v${{ matrix.node-version }}, Webpack ${{ matrix.webpack-version }}, DevServer ${{ matrix.dev-server-version }} (${{ matrix.shard }})
 
-      - name: Commit updated docs
-        uses: EndBug/add-and-commit@v9.0.0
+    runs-on: ${{ matrix.os }}
+
+    concurrency:
+      group: {"tabindex":"-1","data-v-0b0ada53":"{"tabindex":"-1","data-v-0b0ada53":""}{1.=>0}(i,l)=>(a(),u(w,null,[v("span",{ref_key: "backToTop", ref:o, tabindex: "-1"},null,512),v("a",{href: "#VPContent" ,class: "VPSkipLink vistuall"}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [18.x, 20.x, 22.x, 24.x]
+        shard: ["1/4", "2/4", "3/4", "4/4"]
+        webpack-version: [latest]
+        dev-server-version: [latest]
+
+    steps:
+      - uses: actions/checkout@v4
         with:
-          add: "*.md"
-          message: "docs: update options"
-          author_name: Nitin Kumar
-          author_email: snitin315@gmail.com
+          fetch-depth: 0
+
+      - name: Using Node v${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "yarn"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile --ignore-engines --ignore-scripts
+
+      - name: Prepare environment for tests
+        run: yarn build:ci
+
+      - name: Run tests and generate coverage
+        run: yarn test:coverage --ci --shard=${{ matrix.shard }}
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
+
+  smoketests:
+    name: Smoketests - ${{ matrix.os }} - Node v${{ matrix.node-version }}
+    runs-on: ubuntu-latest
+    concurrency:
+      group: smoketests-${{ github.ref }}
+      cancel-in-progress: true
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node-version: [lts/*]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Using Node v${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile --ignore-engines
+
